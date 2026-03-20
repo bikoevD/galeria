@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.license        = package['license']
   s.author         = package['author']
   s.homepage       = package['homepage']
-  s.platform       = :ios, '16.0'
+  s.platform       = :ios, '13.0'
   s.swift_version  = '5.4'
   s.source         = { git: 'https://github.com/nandorojo/galeria' }
   s.static_framework = true
@@ -23,17 +23,32 @@ Pod::Spec.new do |s|
   s.dependency 'ExpoModulesCore'
   s.dependency 'SDWebImage'
 
-  spm_dependency(s,
-    url: "https://github.com/b3ll/Motion.git",
-    requirement: {kind: "branch", branch: "main"},
-    products: ["Motion"]
-  )
 
-  # Swift/Objective-C compatibility
+  # Motion SPM is added to the main Xcode project by the withMotionSPM plugin.
+  # Regular build: SYMROOT = .../Build/Products          -> ../../SourcePackages
+  # Archive build: SYMROOT = .../ArchiveIntermediates/T/BuildProductsPath -> ../../../../../SourcePackages
+  spm_checkouts_build   = '${SYMROOT}/../../SourcePackages/checkouts'
+  spm_checkouts_archive = '${SYMROOT}/../../../../../SourcePackages/checkouts'
+  numerics_shims_rel    = 'swift-numerics/Sources/_NumericsShims/include'
+
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
     'SWIFT_COMPILATION_MODE' => 'wholemodule',
-    'OTHER_SWIFT_FLAGS' => "$(inherited) #{new_arch_enabled ? new_arch_compiler_flags : ''}"
+    'OTHER_SWIFT_FLAGS' => [
+      '$(inherited)',
+      new_arch_enabled ? new_arch_compiler_flags : '',
+    ].reject(&:empty?).join(' '),
+    'SWIFT_INCLUDE_PATHS' => [
+      '$(inherited)',
+      '"${SYMROOT}/${CONFIGURATION}${EFFECTIVE_PLATFORM_NAME}/"',
+      "\"#{spm_checkouts_build}/#{numerics_shims_rel}\"",
+      "\"#{spm_checkouts_archive}/#{numerics_shims_rel}\"",
+    ].join(' '),
+    'HEADER_SEARCH_PATHS' => [
+      '$(inherited)',
+      "\"#{spm_checkouts_build}/#{numerics_shims_rel}\"",
+      "\"#{spm_checkouts_archive}/#{numerics_shims_rel}\"",
+    ].join(' '),
   }
 
   s.source_files = "**/*.{h,m,swift}"

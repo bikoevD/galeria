@@ -146,7 +146,7 @@ class ImageViewerRootView: UIView, RootViewType {
         }
 
         let closeBarButton = UIBarButtonItem(
-            title: NSLocalizedString("Close", comment: "Close button title"),
+            title: "Закрыть",
             style: .plain,
             target: self,
             action: #selector(dismissViewer)

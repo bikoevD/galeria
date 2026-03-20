@@ -16,6 +16,8 @@ const NativeImage = requireNativeView<
     edgeToEdge: boolean
     urls?: string[]
     theme: 'dark' | 'light'
+    showCloseButton?: boolean
+    customBackgroundColor?: string
     onIndexChange?: (event: GaleriaIndexChangedEvent) => void
   }
 >('Galeria')
@@ -28,15 +30,24 @@ const Galeria = Object.assign(
     urls,
     theme = 'dark',
     ids,
+    closeIconName,
+    hideBlurOverlay = false,
+    hidePageIndicators = false,
+    backgroundColors,
   }: {
     children: React.ReactNode
-  } & Partial<Pick<GaleriaContext, 'theme' | 'ids' | 'urls'>>) {
+  } & Partial<
+    Pick<
+      GaleriaContext,
+      'theme' | 'ids' | 'urls' | 'closeIconName' | 'hideBlurOverlay' | 'hidePageIndicators' | 'backgroundColors'
+    >
+  >) {
     return (
       <GaleriaContext.Provider
         value={{
-          hideBlurOverlay: false,
-          hidePageIndicators: false,
-          closeIconName: undefined,
+          hideBlurOverlay,
+          hidePageIndicators,
+          closeIconName,
           urls,
           theme,
           initialIndex: 0,
@@ -44,6 +55,7 @@ const Galeria = Object.assign(
           src: '',
           setOpen: noop,
           ids,
+          backgroundColors,
         }}
       >
         {children}
@@ -52,18 +64,22 @@ const Galeria = Object.assign(
   },
   {
     Image({ edgeToEdge, ...props }: GaleriaViewProps) {
-      const { theme, urls } = useContext(GaleriaContext)
+      const { theme, urls, closeIconName, backgroundColors } =
+        useContext(GaleriaContext)
 
       if (__DEV__) {
-        // warn the user once about unnecessary defined prop
         controlEdgeToEdgeValues({ edgeToEdge })
       }
+
+      const customBackgroundColor = backgroundColors?.[theme]
 
       return (
         <NativeImage
           onIndexChange={props.onIndexChange}
           edgeToEdge={EDGE_TO_EDGE || (edgeToEdge ?? false)}
           theme={theme}
+          showCloseButton={!!closeIconName}
+          customBackgroundColor={customBackgroundColor}
           urls={urls?.map((url) => {
             if (typeof url === 'string') {
               return url

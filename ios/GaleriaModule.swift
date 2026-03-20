@@ -37,6 +37,10 @@ public class GaleriaModule: Module {
         view.hidePageIndicators = hidePageIndicators ?? false
       }
 
+      Prop("customBackgroundColor") { (view, customBackgroundColor: String?) in
+        view.customBackgroundColor = customBackgroundColor
+      }
+
     }
   }
 

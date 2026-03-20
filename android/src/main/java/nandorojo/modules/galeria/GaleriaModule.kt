@@ -41,6 +41,12 @@ class GaleriaModule : Module() {
             Prop("transitionOffsetX") { view: GaleriaView, transitionOffsetX: Int? ->
                 view.transitionOffsetX = transitionOffsetX
             }
+            Prop("showCloseButton") { view: GaleriaView, showCloseButton: Boolean ->
+                view.showCloseButton = showCloseButton
+            }
+            Prop("customBackgroundColor") { view: GaleriaView, customBackgroundColor: String? ->
+                view.customBackgroundColor = customBackgroundColor
+            }
         }
     }
 }

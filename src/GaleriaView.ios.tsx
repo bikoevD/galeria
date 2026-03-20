@@ -11,6 +11,7 @@ const NativeImage = requireNativeView<
     urls?: string[]
     closeIconName?: SFSymbol
     theme: 'dark' | 'light'
+    customBackgroundColor?: string
     onIndexChange?: (event: GaleriaIndexChangedEvent) => void
     hideBlurOverlay?: boolean
     hidePageIndicators?: boolean
@@ -28,10 +29,14 @@ const Galeria = Object.assign(
     ids,
     hideBlurOverlay = false,
     hidePageIndicators = false,
+    backgroundColors,
   }: {
     children: React.ReactNode
   } & Partial<
-    Pick<GaleriaContext, 'theme' | 'ids' | 'urls' | 'closeIconName' | 'hideBlurOverlay' | 'hidePageIndicators'>
+    Pick<
+      GaleriaContext,
+      'theme' | 'ids' | 'urls' | 'closeIconName' | 'hideBlurOverlay' | 'hidePageIndicators' | 'backgroundColors'
+    >
   >) {
     return (
       <GaleriaContext.Provider
@@ -46,6 +51,7 @@ const Galeria = Object.assign(
           ids,
           hideBlurOverlay,
           hidePageIndicators,
+          backgroundColors,
         }}
       >
         {children}
@@ -54,13 +60,24 @@ const Galeria = Object.assign(
   },
   {
     Image(props: GaleriaViewProps) {
-      const { theme, urls, initialIndex, closeIconName, hideBlurOverlay, hidePageIndicators } =
-        useContext(GaleriaContext)
+      const {
+        theme,
+        urls,
+        initialIndex,
+        closeIconName,
+        hideBlurOverlay,
+        hidePageIndicators,
+        backgroundColors,
+      } = useContext(GaleriaContext)
+
+      const customBackgroundColor = backgroundColors?.[theme]
+
       return (
         <NativeImage
           onIndexChange={props.onIndexChange}
           closeIconName={closeIconName}
           theme={theme}
+          customBackgroundColor={customBackgroundColor}
           hideBlurOverlay={props.hideBlurOverlay ?? hideBlurOverlay}
           hidePageIndicators={props.hidePageIndicators ?? hidePageIndicators}
           urls={urls?.map((url) => {

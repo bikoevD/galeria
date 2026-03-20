@@ -79,6 +79,7 @@ class GaleriaView: ExpoView {
   var rightNavItemIconName: String?
   var hideBlurOverlay: Bool = false
   var hidePageIndicators: Bool = false
+  var customBackgroundColor: String?
   let onPressRightNavItemIcon = EventDispatcher()
   let onIndexChange = EventDispatcher()
 
@@ -166,6 +167,10 @@ class GaleriaView: ExpoView {
     options.append(.hideBlurOverlay(hideBlurOverlay))
     options.append(.hidePageIndicators(hidePageIndicators))
 
+    if let hexString = customBackgroundColor, let color = UIColor(galeriaHex: hexString) {
+      options.append(.customBackgroundColor(color))
+    }
+
     return options
   }
 }
@@ -237,5 +242,36 @@ extension UIResponder {
     
     @objc private func findFirstResponder(_ sender: Any) {
         UIResponder._currentFirstResponder = self
+    }
+}
+
+extension UIColor {
+    convenience init?(galeriaHex hex: String) {
+        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if hexSanitized.hasPrefix("#") {
+            hexSanitized = String(hexSanitized.dropFirst())
+        }
+        
+        var rgb: UInt64 = 0
+        guard Scanner(string: hexSanitized).scanHexInt64(&rgb) else { return nil }
+        
+        switch hexSanitized.count {
+        case 6:
+            self.init(
+                red: CGFloat((rgb & 0xFF0000) >> 16) / 255.0,
+                green: CGFloat((rgb & 0x00FF00) >> 8) / 255.0,
+                blue: CGFloat(rgb & 0x0000FF) / 255.0,
+                alpha: 1.0
+            )
+        case 8:
+            self.init(
+                red: CGFloat((rgb & 0xFF000000) >> 24) / 255.0,
+                green: CGFloat((rgb & 0x00FF0000) >> 16) / 255.0,
+                blue: CGFloat((rgb & 0x0000FF00) >> 8) / 255.0,
+                alpha: CGFloat(rgb & 0x000000FF) / 255.0
+            )
+        default:
+            return nil
+        }
     }
 }

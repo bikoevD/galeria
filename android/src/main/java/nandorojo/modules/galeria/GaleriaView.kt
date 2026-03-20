@@ -5,11 +5,18 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.PixelFormat
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.Looper
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.annotation.Keep
 import androidx.lifecycle.ViewModelProvider
@@ -22,6 +29,7 @@ import com.github.iielse.imageviewer.ImageViewerBuilder
 import com.github.iielse.imageviewer.ImageViewerDialogFragment
 import com.github.iielse.imageviewer.R
 import com.github.iielse.imageviewer.core.ImageLoader
+import com.github.iielse.imageviewer.core.OverlayCustomizer
 import com.github.iielse.imageviewer.core.Photo
 import com.github.iielse.imageviewer.core.SimpleDataProvider
 import com.github.iielse.imageviewer.core.Transformer
@@ -40,7 +48,7 @@ class StringPhoto(private val id: Long, private val data: String) : Photo {
 
 fun convertToPhotos(ids: Array<String>): List<Photo> {
     return ids.mapIndexed { index, data ->
-        StringPhoto(index.toLong(), data)  // Use index as the id, and data as the image data.
+        StringPhoto(index.toLong(), data)
     }
 }
 
@@ -56,6 +64,8 @@ class GaleriaView(context: Context) : ViewGroup(context) {
     var edgeToEdge = false
     var transitionOffsetY: Int? = null
     var transitionOffsetX: Int? = 0
+    var showCloseButton: Boolean = false
+    var customBackgroundColor: String? = null
     val viewModel: ImageViewerActionViewModel by lazy {
         ViewModelProvider(getViewModelOwner(context)).get(ImageViewerActionViewModel::class.java)
     }
@@ -128,6 +138,13 @@ class GaleriaView(context: Context) : ViewGroup(context) {
                         })
                     }
 
+                    if (showCloseButton) {
+                        val topInset = if (edgeToEdge) getStatusBarHeight() else 0
+                        viewer.setOverlayCustomizer(CloseButtonOverlay(theme, topInset) {
+                            viewModel.dismiss()
+                        })
+                    }
+
                     viewer.show()
 
                 }
@@ -163,7 +180,9 @@ class GaleriaView(context: Context) : ViewGroup(context) {
         }
 
         Config.TRANSITION_OFFSET_X = transitionOffsetX ?: 0
-        Config.VIEWER_BACKGROUND_COLOR = theme.toImageViewerTheme()
+        Config.VIEWER_BACKGROUND_COLOR = customBackgroundColor?.let {
+            try { Color.parseColor(it) } catch (_: Exception) { null }
+        } ?: theme.toImageViewerTheme()
     }
 
 
@@ -213,7 +232,6 @@ enum class Theme(val value: String) {
 
 class SimpleImageLoader : ImageLoader {
     override fun load(view: ImageView, data: Photo, viewHolder: RecyclerView.ViewHolder) {
-//        Todo: Since React-Native's Image is using Fresco as the image loader, we may need to handle it differently.
         val it = data.extra() as? String
         Glide.with(view).load(it)
             .placeholder(view.drawable)
@@ -221,6 +239,73 @@ class SimpleImageLoader : ImageLoader {
     }
 }
 
+private class CloseIconDrawable(color: Int, private val density: Float) : Drawable() {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        this.color = color
+        strokeWidth = 2f * density
+        strokeCap = Paint.Cap.ROUND
+        style = Paint.Style.STROKE
+    }
 
+    override fun draw(canvas: Canvas) {
+        val padding = bounds.width() * 0.3f
+        val left = bounds.left + padding
+        val top = bounds.top + padding
+        val right = bounds.right - padding
+        val bottom = bounds.bottom - padding
+        canvas.drawLine(left, top, right, bottom, paint)
+        canvas.drawLine(right, top, left, bottom, paint)
+    }
 
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+    override fun setColorFilter(colorFilter: android.graphics.ColorFilter?) { paint.colorFilter = colorFilter }
+    @Deprecated("Deprecated in Java")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+}
 
+private class CloseButtonOverlay(
+    private val theme: Theme,
+    private val topInset: Int,
+    private val onClose: () -> Unit
+) : OverlayCustomizer {
+    override fun provideView(parent: ViewGroup): View {
+        val context = parent.context
+        val dp = context.resources.displayMetrics.density
+        val buttonSize = (40 * dp).toInt()
+        val margin = (16 * dp).toInt()
+
+        val iconColor = when (theme) {
+            Theme.Dark -> Color.WHITE
+            Theme.Light -> Color.BLACK
+        }
+
+        val button = ImageView(context).apply {
+            setImageDrawable(CloseIconDrawable(iconColor, dp))
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.argb(60, 128, 128, 128))
+            }
+            layoutParams = FrameLayout.LayoutParams(buttonSize, buttonSize).apply {
+                topMargin = topInset + margin
+                rightMargin = margin
+                gravity = Gravity.TOP or Gravity.END
+            }
+        }
+
+        val container = FrameLayout(context).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            addView(button)
+        }
+
+        button.setOnClickListener {
+            container.visibility = View.GONE
+            onClose()
+        }
+
+        return container
+    }
+}

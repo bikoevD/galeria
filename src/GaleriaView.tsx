@@ -80,10 +80,12 @@ Or, you might need something like alignItems: 'flex-start' to the parent element
       }
     }
   }
-  const background = {
+  const { backgroundColors } = useContext(GaleriaContext)
+  const defaultBackground = {
     light: '#ffffff',
     dark: '#000000',
-  }[theme]
+  }
+  const background = backgroundColors?.[theme] ?? defaultBackground[theme]
   const foreground = {
     light: '#000000',
     dark: '#ffffff',
@@ -200,6 +202,7 @@ function Root({
   urls,
   theme = 'dark',
   ids,
+  backgroundColors,
 }: ComponentProps<typeof Native>) {
   const [openState, setOpen] = useState({
     open: false,
@@ -221,6 +224,7 @@ function Root({
         setOpen,
         urls,
         theme,
+        backgroundColors,
         ...(openState.open
           ? {
               open: true,

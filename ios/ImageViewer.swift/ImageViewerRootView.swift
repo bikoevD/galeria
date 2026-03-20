@@ -204,6 +204,8 @@ class ImageViewerRootView: UIView, RootViewType {
                 self.hideBlurOverlay = hide
             case .hidePageIndicators(let hide):
                 self.hidePageIndicators = hide
+            case .customBackgroundColor(let color):
+                backgroundView.backgroundColor = color
             }
         }
     }

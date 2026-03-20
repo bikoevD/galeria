@@ -5,6 +5,5 @@
   },
   "android": {
     "modules": ["nandorojo.modules.galeria.GaleriaModule"]
-  },
-  "plugins": ["./plugin/withMotionSPM"]
+  }
 }
